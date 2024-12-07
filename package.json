@@ -1,0 +1,11 @@
+{
+  "name": "homeaccounting",
+  "version": "0.0.0",
+  "description": "Anwendung zur Verwaltung der Finanzen des privaten Haushalts",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "guilian.newiger@yahoo.com",
+  "license": "ISC"
+}
