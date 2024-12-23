@@ -1,0 +1,24 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/homeaccounting.Dockerfile
+    ports:
+      - 3000:3000
+    environment:
+      - HOMEACCOUNTING_HOSTNAME=${HOMEACCOUNTING_HOSTNAME}
+      - HOMEACCOUNTING_PORT=${HOMEACCOUNTING_PORT}
+    network_mode: host
+  postgres:
+    build:
+      context: .
+      dockerfile: docker/postgres.Dockerfile
+    ports:
+      - 5432:5432
+    volumes:
+      - ./data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+      - POSTGRES_DB=homeaccounting
+    network_mode: host
+

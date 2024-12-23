@@ -1,0 +1,1 @@
+truncate konto cascade;
