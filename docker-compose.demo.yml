@@ -1,5 +1,6 @@
 services:
   app:
+    depends_on: [postgres]
     build:
       context: .
       dockerfile: docker/homeaccounting.Dockerfile
@@ -8,6 +9,7 @@ services:
     environment:
       - HOMEACCOUNTING_HOSTNAME=${HOMEACCOUNTING_HOSTNAME}
       - HOMEACCOUNTING_PORT=${HOMEACCOUNTING_PORT}
+      - DATABASE_PASSWORD=${DATABASE_APP_PASSWORD}
     network_mode: host
   postgres:
     build:

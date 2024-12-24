@@ -120,7 +120,7 @@ begin
 end;
 $$ language plpgsql;
 
-create or replace procedure create_konto("name" varchar(30))
+create or replace procedure create_konto(IN "name" varchar(30), OUT id smallint)
 language sql
 as $$
     with created_konto as (
@@ -128,5 +128,5 @@ as $$
         values ("name") returning id
     )
     insert into saldo(konto) -- initializes with default 0 in both soll and haben
-    select id from created_konto;
+    select id from created_konto returning konto;
 $$;
