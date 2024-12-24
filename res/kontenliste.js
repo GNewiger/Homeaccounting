@@ -3,7 +3,7 @@ var addKontoClicked = function(name) {
     const url = "createKonto";
     try {
         fetch(url, {
-            body: JSON.stringify({ name: name }),
+            body: name,
             method: "POST"
         }).then((response) => {
             if (!response.ok) {
