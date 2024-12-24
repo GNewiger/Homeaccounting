@@ -1,9 +1,14 @@
-var addKontoClicked = function(name) {
+var addKontoClicked = function() {
     // add konto
+    const name = document.getElementById("nameInput");
+    if (name.value == "") {
+        alert('Bitte Namen des Kontos eingeben.');
+        return;
+    }
     const url = "createKonto";
     try {
         fetch(url, {
-            body: name,
+            body: name.value,
             method: "POST"
         }).then((response) => {
             if (!response.ok) {
@@ -12,7 +17,7 @@ var addKontoClicked = function(name) {
             response.json().then((json) => {
                 let kontoListe = document.getElementById('kontoListe');
                 let newKonto = document.createElement('li');
-                newKonto.innerText = name;
+                newKonto.innerText = name.value;
                 newKonto.id = 'konto' + json.data.id;
                 kontoListe.appendChild(newKonto);
             });
