@@ -9,10 +9,10 @@
     <main>
         <h1>Kontenübersicht</h1>
         <ul id="kontoListe"></ul>
-        <form onsubmit="addKontoClicked()" action="javascript:void(0);">
+        <form action="javascript:void(0);">
           <label for="name">Name:</label>
           <input type="text" id="nameInput" placeholder="Kontoname hier eingeben..." required>
-          <button type="submit" id="submitButton">
+          <button type="submit" id="submitButton" onclick="addKontoClicked()">
               Konto hinzufügen
           </button>
         </form>

@@ -32,7 +32,7 @@ const server = createServer((req, res) => {
     let body = '';
     req.on('data', (chunk) => {
         body += chunk;
-    })
+    });
     pool.connect((err, client, release) => {
         if (err) {
             res.statusCode = 500;
@@ -54,26 +54,36 @@ const server = createServer((req, res) => {
             }    
             release();
         });
-    })
+    });
     return;
   }
   if (req.url === '/konten'){
     var konten = [];
-    pool.connect((err) => {
+    pool.connect((err, client, release) => {
+        if (err) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Datenbankverbindung fehlgeschlagen', detail: err.message }));
+            return;
+        }
         pool.query("select * from konto", (queryErr, pgRes) => {
+            if (err) {
+                res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
+                res.end();
+                return;
+            }
             pgRes.rows.forEach(row=>{
                 konten.push({id: row.id, name: row.name});
             });
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');
-            res.end(konten);
-        })
+            res.end(JSON.stringify(konten));
+        });
+        release();
     });
     return;
   }
-  res.statusCode = 404;
-  res.setHeader('Content-Type', 'text/plain');
-  res.end('');
 });
 
 server.listen(port, hostname, () => {
