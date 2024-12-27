@@ -7,10 +7,20 @@ const url = "/konten";
             response.json().then((data) => {
                 let kontoListe = document.getElementById('kontoListe');
                 data.forEach((d)=>{
-                    let newKonto = document.createElement('li');
-                    newKonto.innerText = d.name;
-                    newKonto.id = 'konto' + d.id;
-                    kontoListe.appendChild(newKonto); 
+                    let tr = document.createElement('tr');
+                    let tdName = document.createElement('td');
+                    let tdSaldo = document.createElement('td');
+                    
+                    tr.id = 'konto' + d.id;
+                    tdName.id = 'konto' + d.id + '_name';
+                    tdSaldo.id = 'konto' + d.id + '_saldo';
+                    
+                    tdName.innerText = d.name;
+                    tdSaldo.innerText = d.haben_in_cents - d.soll_in_cents;
+                    
+                    kontoListe.appendChild(tr);
+                    tr.appendChild(tdName);
+                    tr.appendChild(tdSaldo);
                 });
             });
         });   

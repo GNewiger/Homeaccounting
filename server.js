@@ -41,7 +41,7 @@ const server = createServer((req, res) => {
             return;
         }
             
-        pool.query("CALL create_konto($1, $2)", [body,null], (err, pgRes) => {
+        pool.query("CALL create_konto($1)", [body], (err, pgRes) => {
             if (err) {
                 res.statusCode = 500;
                 res.setHeader('Content-Type', 'application/json');
@@ -66,7 +66,7 @@ const server = createServer((req, res) => {
             res.end(JSON.stringify({ error: 'Datenbankverbindung fehlgeschlagen', detail: err.message }));
             return;
         }
-        pool.query("select * from konto", (queryErr, pgRes) => {
+        pool.query("select k.id, k.name, s.haben_in_cents, s.soll_in_cents from konto k join saldo s on k.id = s.konto;", (queryErr, pgRes) => {
             if (err) {
                 res.statusCode = 500;
                 res.setHeader('Content-Type', 'application/json');

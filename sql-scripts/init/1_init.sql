@@ -6,8 +6,8 @@ create table konto(
 	name	varchar(30) not null unique -- why not primary key? because name shall be changable without having to rearrange buchungen
 );
 create table saldo(
-	konto				smallint not null references konto(id),
-	point_in_time		timestamp(0) not null default current_timestamp,
+	konto			smallint not null references konto(id),
+	point_in_time		timestamp not null default current_timestamp,
 	haben_in_cents		integer not null default 0, -- because we only do addition and subtraction, no need to worry about exactness of floating points operations
 	soll_in_cents		integer not null default 0, -- because we only do addition and subtraction, no need to worry about exactness of floating points operations
 	primary key (konto, point_in_time)
@@ -19,7 +19,7 @@ create table buchung(
 	source_konto					smallint not null references konto(id),
 	source_konto_is_on_haben_side	boolean not null default true, -- otherwise it's Soll
 	description						varchar(100),
-	time_of_transfer				timestamp(0) not null default current_timestamp
+	time_of_transfer				timestamp not null default current_timestamp
 );
 create index on buchung (time_of_transfer);
 
@@ -44,7 +44,7 @@ create table test_error(
 );
 
 create table test_performance_result(
-	test_name			varchar(50) primary key references test_result(test_name),
+	test_name		varchar(50) primary key references test_result(test_name),
 	time_in_millis		bigint
 );
 
@@ -57,7 +57,7 @@ create type target_konto_split AS (
 create or replace procedure buchen(
     source_konto_id smallint, 
     source_konto_is_on_haben_side boolean,
-    time_of_transfer timestamp(0),
+    time_of_transfer timestamp,
     source_description varchar(100),
     variadic target_konto_split_arr target_konto_split[]
     ) as $$
@@ -120,13 +120,16 @@ begin
 end;
 $$ language plpgsql;
 
-create or replace procedure create_konto(IN "name" varchar(30), OUT id smallint)
+create or replace procedure create_konto(IN "name" varchar(30), in creation_timestamp timestamp default current_timestamp)
 language sql
 as $$
     with created_konto as (
         insert into konto("name")
         values ("name") returning id
     )
-    insert into saldo(konto) -- initializes with default 0 in both soll and haben
-    select id from created_konto returning konto;
+    insert into saldo(konto, point_in_time) -- initializes with default 0 in both soll and haben
+    select id, creation_timestamp from created_konto;
+
+    -- return result
+    select id from konto where "name" = create_konto."name";
 $$;
