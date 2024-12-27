@@ -34,41 +34,36 @@ begin
         select name, error_message from source_is_haben where is_error;
 end$$;
 
-create or replace procedure unit_test()
-language sql
-as $$
-	-- general setup
-	truncate konto restart identity cascade;
-	
-	create table if not exists test_result(
-		test_name 	varchar(50) primary key,
-		passed 		boolean
-	);
+-- general setup
+truncate konto restart identity cascade;
 
-	create table if not exists test_error(
-		test_name	varchar(50) references test_result(test_name),
-		error_message	varchar(250),
-		primary key (test_name, error_message)
-	);
+create table if not exists test_result(
+	test_name 	varchar(50) primary key,
+	passed 		boolean
+);
 
-	create table if not exists test_performance_result(
-		test_name		varchar(50) primary key references test_result(test_name),
-		time_in_millis		bigint
-	);
+create table if not exists test_error(
+	test_name	varchar(50) references test_result(test_name),
+	error_message	varchar(250),
+	primary key (test_name, error_message)
+);
 
-	truncate test_result cascade;
-	truncate test_error cascade;
-	truncate test_performance_result cascade;
+create table if not exists test_performance_result(
+	test_name		varchar(50) primary key references test_result(test_name),
+	time_in_millis		bigint
+);
 
-	call create_konto('Gehalt'::varchar, clock_timestamp()::timestamp);
-	call create_konto('Bafoeg'::varchar, clock_timestamp()::timestamp);
-	call create_konto('Sparen'::varchar, clock_timestamp()::timestamp);
+truncate test_result cascade;
+truncate test_error cascade;
+truncate test_performance_result cascade;
 
-	-- test execution
-	call test_buchen_source_haben();
-	--call test_buchen_source_soll();
-$$;
+call create_konto('Gehalt'::varchar, null, clock_timestamp()::timestamp);
+call create_konto('Bafoeg'::varchar, null, clock_timestamp()::timestamp);
+call create_konto('Sparen'::varchar, null, clock_timestamp()::timestamp);
 
-call unit_test();
+-- test execution
+call test_buchen_source_haben();
+--call test_buchen_source_soll();
+
 select * from test_error;
 select * from test_result;

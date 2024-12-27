@@ -41,7 +41,7 @@ const server = createServer((req, res) => {
             return;
         }
             
-        pool.query("CALL create_konto($1)", [body], (err, pgRes) => {
+        pool.query("CALL create_konto($1, $2);", [body, null], (err, pgRes) => {
             if (err) {
                 res.statusCode = 500;
                 res.setHeader('Content-Type', 'application/json');
@@ -51,7 +51,7 @@ const server = createServer((req, res) => {
                 res.statusCode = 200;
                 res.setHeader('Content-Type', 'application/json');
                 res.end(JSON.stringify({ success: true, data: pgRes.rows[0] }));
-            }    
+            }
             release();
         });
     });
@@ -74,7 +74,7 @@ const server = createServer((req, res) => {
                 return;
             }
             pgRes.rows.forEach(row=>{
-                konten.push({id: row.id, name: row.name});
+                konten.push({id: row.id, name: row.name, soll_in_cents: row.soll_in_cents, haben_in_cents: row.haben_in_cents});
             });
             res.statusCode = 200;
             res.setHeader('Content-Type', 'application/json');

@@ -120,7 +120,7 @@ begin
 end;
 $$ language plpgsql;
 
-create or replace procedure create_konto(IN "name" varchar(30), in creation_timestamp timestamp default current_timestamp)
+create or replace procedure create_konto(IN "name" varchar(30), out id smallint, in creation_timestamp timestamp default current_timestamp)
 language sql
 as $$
     with created_konto as (
@@ -129,7 +129,7 @@ as $$
     )
     insert into saldo(konto, point_in_time) -- initializes with default 0 in both soll and haben
     select id, creation_timestamp from created_konto;
-
+    
     -- return result
     select id from konto where "name" = create_konto."name";
 $$;

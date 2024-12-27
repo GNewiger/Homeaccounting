@@ -44,12 +44,22 @@ var addKontoClicked = function() {
             if (!response.ok) {
                 throw new Error(`Response status: ${response.status}`);
             }
+            let kontoListe = document.getElementById('kontoListe');
             response.json().then((json) => {
-                let kontoListe = document.getElementById('kontoListe');
-                let newKonto = document.createElement('li');
-                newKonto.innerText = name.value;
-                newKonto.id = 'konto' + json.data.id;
-                kontoListe.appendChild(newKonto);
+                let tr = document.createElement('tr');
+                let tdName = document.createElement('td');
+                let tdSaldo = document.createElement('td');
+                
+                tr.id = 'konto' + json.data.id;
+                tdName.id = 'konto' + json.data.id + '_name';
+                tdSaldo.id = 'konto' + json.data.id + '_saldo';
+                
+                tdName.innerText = name.value;
+                tdSaldo.innerText = 0;
+                
+                kontoListe.appendChild(tr);
+                tr.appendChild(tdName);
+                tr.appendChild(tdSaldo);
             });
         });   
     } catch (error) {
