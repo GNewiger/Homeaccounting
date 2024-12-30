@@ -5,6 +5,7 @@ const fs = require('fs');
 const hostname = process.env.HOMEACCOUNTING_HOSTNAME;
 const port = process.env.HOMEACCOUNTING_PORT;
 const dbPassword = process.env.DATABASE_PASSWORD;
+const allowTests = process.env.ALLOW_TESTS;
 
 var connectionString =`postgresql://postgres:${dbPassword}@${hostname}:5432/homeaccounting`;
 const pool = new Pool({
@@ -96,6 +97,12 @@ const server = createServer((req, res) => {
     });
   }
   if (req.url === '/unit-test'){
+    if(!(allowTests === 'true')){
+        res.statusCode = 404;
+        res.setHeader('Content-Type', 'application/json');
+        res.end();
+        return;
+    }
     pool.connect((err, client, release) => {
         if (err) {
             res.statusCode = 500;
