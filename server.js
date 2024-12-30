@@ -14,6 +14,7 @@ const pool = new Pool({
 
 const kontenlisteHtml = fs.readFileSync('./res/kontenliste.html');
 const kontenlisteJs = fs.readFileSync('./res/kontenliste.js');
+const unitTestSql = fs.readFileSync('./res/unit_test.sql');
 
 const server = createServer((req, res) => {
   if (req.url === '/'){
@@ -28,7 +29,7 @@ const server = createServer((req, res) => {
     res.end(kontenlisteJs.toString());
     return;
   }
-  if (req.url === '/createKonto'){
+  if (req.url === '/create-konto'){
     let body = '';
     req.on('data', (chunk) => {
         body += chunk;
@@ -66,11 +67,21 @@ const server = createServer((req, res) => {
             res.end(JSON.stringify({ error: 'Datenbankverbindung fehlgeschlagen', detail: err.message }));
             return;
         }
-        pool.query("select k.id, k.name, s.haben_in_cents, s.soll_in_cents from konto k join saldo s on k.id = s.konto;", (queryErr, pgRes) => {
+        const retrieveLatestSaldosQuery = `with latest as
+			(
+				select max(point_in_time) as point_in_time, konto from saldo group by konto
+			),
+            latest_saldos as 
+			(
+				select konto as id, soll_in_cents, haben_in_cents from saldo join latest using (konto, point_in_time)
+			)
+            select k.id, k.name, s.haben_in_cents, s.soll_in_cents from konto k join latest_saldos s using (id);`;
+        pool.query(retrieveLatestSaldosQuery, (queryErr, pgRes) => {
             if (err) {
                 res.statusCode = 500;
                 res.setHeader('Content-Type', 'application/json');
-                res.end();
+                res.end(JSON.stringify({ error: 'Fehler in der Datenbank', detail: err.message }));
+                release();
                 return;
             }
             pgRes.rows.forEach(row=>{
@@ -81,8 +92,32 @@ const server = createServer((req, res) => {
             res.end(JSON.stringify(konten));
         });
         release();
+        return;
     });
-    return;
+  }
+  if (req.url === '/unit-test'){
+    pool.connect((err, client, release) => {
+        if (err) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Fehler in der Datenbank', detail: err.message }));
+            return;
+        }
+        pool.query(unitTestSql.toString(), (queryErr, pgRes) => {
+            if (err) {
+                res.statusCode = 500;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ error: 'Datenbankverbindung fehlgeschlagen', detail: err.message }));
+                release();
+                return;
+            }
+            res.statusCode = 200;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(pgRes.rows));
+        });
+        release();
+        return;
+    });
   }
 });
 

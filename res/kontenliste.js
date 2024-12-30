@@ -35,7 +35,7 @@ var addKontoClicked = function() {
         alert('Bitte Namen des Kontos eingeben.');
         return;
     }
-    const url = "createKonto";
+    const url = "create-konto";
     try {
         fetch(url, {
             body: name.value,
