@@ -13,21 +13,21 @@ const pool = new Pool({
 })
 
 
-const kontenlisteHtml = fs.readFileSync('./res/kontenliste.html');
-const kontenlisteJs = fs.readFileSync('./res/kontenliste.js');
+const clientHtml = fs.readFileSync('./res/client.html');
+const clientJs = fs.readFileSync('./res/client.js');
 const unitTestSql = fs.readFileSync('./res/unit_test.sql');
 
 const server = createServer((req, res) => {
   if (req.url === '/'){
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/html');
-    res.end(kontenlisteHtml.toString());
+    res.end(clientHtml.toString());
     return;
   }
-  if (req.url === '/kontenliste.js'){
+  if (req.url === '/client.js'){
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/javascript');
-    res.end(kontenlisteJs.toString());
+    res.end(clientJs.toString());
     return;
   }
   if (req.url === '/create-konto'){

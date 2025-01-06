@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homeaccounting</title>
+  </head>
+  <body>
+    <main>
+        <section>
+          <h1>Konten</h1>
+          <table id="kontoListe">
+            <tr>
+              <th>Name</th>
+              <th>Haben - Soll</th>
+            </tr>
+          </table> 
+          <form action="javascript:void(0);">
+            <label>Name:</label>
+            <input type="text" id="kontoNameInput" placeholder="Kontoname hier eingeben..." required>
+            <button type="submit" id="kontoSubmitButton" onclick="addKontoClicked()">
+                Konto hinzufügen
+            </button>
+          </form>
+        </section>
+        <section>
+          <h1>Buchungen</h1>
+        </section>
+        <section id="kontoSection">
+          <h1 id="selectedKontoName"></h1>
+          <label id="selectedKontoCurrentSoll"></label>
+          <label id="selectedKontoCurrentHaben"></label>
+          <h2>Buchen</h2>
+          <form action="javascript:void(0);">
+            <label for="buchungSource">Quellkonto:</label>
+            <input type="text" id="buchungSource" placeholder="Name des Quellkontos eingeben..." required>
+            <p>Quellkonto Soll oder Haben:</p>
+            <label for="buchungSoll">Soll</label>
+            <input type="radio" id="buchungSoll" name="buchungSollOrHaben"><br>
+            <label for="buchungHaben">Haben</label>
+            <input type="radio" id="buchungHaben" name="buchungSollOrHaben"><br>
+            <label for="buchungDescriptionSource">Beschreibung:</label>
+            <input type="text" id="buchungDescriptionSource" placeholder="Beschreibung hinzufügen..."><br><br>
+            <label for="buchungTarget1">Zielkonto 1:</label>
+            <input type="text" id="buchungTarget1" placeholder="Name des Zielkontos eingeben..." required><br>
+            <label for="buchungBetrag1">Betrag:</label>
+            <input type="text" id="buchungBetrag1" placeholder="Betrag eingeben..." required><br>
+            <label for="buchungDescriptionTarget1">Beschreibung:</label>
+            <input type="text" id="buchungDescriptionTarget1" placeholder="Beschreibung hinzufügen..."><br><br>
+            <label for="buchungTarget2">Zielkonto 2:</label>
+            <input type="text" id="buchungTarget2" placeholder="Name des Zielkontos eingeben..." required><br>
+            <label for="buchungBetrag2">Betrag:</label>
+            <input type="text" id="buchungBetrag2" placeholder="Betrag eingeben..." required><br>
+            <label for="buchungDescriptionTarget2">Beschreibung:</label>
+            <input type="text" id="buchungDescriptionTarget2" placeholder="Beschreibung hinzufügen..."><br><br>
+            <label for="buchungTarget3">Zielkonto 3:</label>
+            <input type="text" id="buchungTarget3" placeholder="Name des Zielkontos eingeben..." required><br>
+            <label for="buchungBetrag3">Betrag:</label>
+            <input type="text" id="buchungBetrag3" placeholder="Betrag eingeben..." required><br>
+            <label for="buchungDescriptionTarget3">Beschreibung:</label>
+            <input type="text" id="buchungDescriptionTarget3" placeholder="Beschreibung hinzufügen..."><br><br>
+            <button type="submit" id="buchungSubmitButton" onclick="addBuchungClicked()">
+                Buchen
+            </button>
+          </form>
+          <h2>Analytics</h2>
+          <label for="kontoAnalyticsMonth">Monat:</label>
+          <input id="kontoAnalyticsMonth" type="month"/><br>
+          <canvas id="selectedKontoSollHabenByMonth" style="width:100%;max-width:700px"></canvas> 
+        </section>
+    </main>
+    <script src="client.js"></script>
+  </body>
+</html>
+

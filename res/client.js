@@ -8,19 +8,23 @@ const url = "/konten";
                 let kontoListe = document.getElementById('kontoListe');
                 data.forEach((d)=>{
                     let tr = document.createElement('tr');
+                    let a = document.createElement('a');
                     let tdName = document.createElement('td');
                     let tdSaldo = document.createElement('td');
                     
+                    a.id = 'konto' + d.id + '_a';
                     tr.id = 'konto' + d.id;
                     tdName.id = 'konto' + d.id + '_name';
                     tdSaldo.id = 'konto' + d.id + '_saldo';
                     
+                    a.setAttribute("href", "/kontoClicked?id=" + d.id);
                     tdName.innerText = d.name;
                     tdSaldo.innerText = d.haben_in_cents - d.soll_in_cents;
-                    
+
                     kontoListe.appendChild(tr);
-                    tr.appendChild(tdName);
+                    tr.appendChild(a);
                     tr.appendChild(tdSaldo);
+                    a.appendChild(tdName);
                 });
             });
         });   
@@ -30,7 +34,7 @@ const url = "/konten";
 
 var addKontoClicked = function() {
     // add konto
-    const name = document.getElementById("nameInput");
+    const name = document.getElementById("kontoNameInput");
     if (name.value == "") {
         alert('Bitte Namen des Kontos eingeben.');
         return;
