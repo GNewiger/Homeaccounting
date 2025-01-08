@@ -141,11 +141,61 @@ const server = createServer((req, res) => {
             res.end(JSON.stringify({ error: 'Fehler in der Datenbank', detail: err.message }));
             return;
         }
+        if (!body.target1.id){
+            res.statusCode = 400;
+            res.setHeader('Content-Type', 'application/json');
+            res.end('Es muss mindestens ein Zielkonto angegeben sein. Sie müssen bei Zielkonto 1 beginnen.');
+            return;
+        }
+        if (!body.target2.id){
+            //ignore target2 and target3
+            pool.query(`CALL buchen($1::smallint, $2, current_timestamp::timestamp, $3::varchar,
+	                row($4, $5, $6)::target_konto_split);
+	    `, [body.source.id, body.sourceKontoHaben, body.source.description,
+            body.target1.id, body.target1.amount, body.target1.description], (err, pgRes) => {
+                if (err) {
+                    res.statusCode = 400;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end();
+                } else {
+                    console.log('Konto erfolgreich erstellt!');
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify({ success: true, data: pgRes.rows[0] }));
+                }
+                release();
+            });
+            return;
+        }
+        if (!body.target3.id){
+            //ignore target3
+            pool.query(`CALL buchen($1::smallint, $2, current_timestamp::timestamp, $3::varchar,
+	                row($4, $5, $6)::target_konto_split,
+	                row($7, $8, $9)::target_konto_split);
+	    `, [body.source.id, body.sourceKontoHaben, body.source.description,
+            body.target1.id, body.target1.amount, body.target1.description,
+            body.target2.id, body.target2.amount, body.target2.description,
+            body.target3.id, body.target3.amount, body.target3.description], (err, pgRes) => {
+                if (err) {
+                    res.statusCode = 400;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end();
+                } else {
+                    console.log('Konto erfolgreich erstellt!');
+                    res.statusCode = 200;
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify({ success: true, data: pgRes.rows[0] }));
+                }
+                release();
+            });
+            return;
+        }
+        
         pool.query(`CALL buchen($1::smallint, $2, current_timestamp::timestamp, $3::varchar,
-	row($4, $5, $6)::target_konto_split,
-	row($7, $8, $9)::target_konto_split,
-	row($10, $11, $12)::target_konto_split);
-	`, [body.source.id, body.sourceKontoHaben, body.source.description,
+                row($4, $5, $6)::target_konto_split,
+                row($7, $8, $9)::target_konto_split,
+                row($10, $11, $12)::target_konto_split);
+    `, [body.source.id, body.sourceKontoHaben, body.source.description,
         body.target1.id, body.target1.amount, body.target1.description,
         body.target2.id, body.target2.amount, body.target2.description,
         body.target3.id, body.target3.amount, body.target3.description], (err, pgRes) => {
@@ -160,7 +210,7 @@ const server = createServer((req, res) => {
                 res.end(JSON.stringify({ success: true, data: pgRes.rows[0] }));
             }
             release();
-        });
+        });    
     });
     });
   }

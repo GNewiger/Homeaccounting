@@ -87,6 +87,12 @@ function addKontoClicked() {
 }
 
 function addBuchungClicked() {
+    //validate
+    if (!document.getElementById('buchungHaben').checked && !document.getElementById('buchungSoll').checked){
+        alert('Soll oder Haben auswählen!');
+        return;
+    }
+
     let kontoListe = document.querySelectorAll("td[id^='konto_name']");
     const target1Element = document.getElementById("buchungTarget1");
     const target2Element = document.getElementById("buchungTarget2");
