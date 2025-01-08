@@ -126,6 +126,44 @@ const server = createServer((req, res) => {
         return;
     });
   }
+  
+  if (req.url === '/buchen'){
+    let bodyChunks = [];
+    req.on('data', (chunk) => {
+        bodyChunks.push(chunk);
+    });
+    req.on('end', () => {
+        const body = JSON.parse(Buffer.concat(bodyChunks));
+        pool.connect((err, client, release) => {
+        if (err) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ error: 'Fehler in der Datenbank', detail: err.message }));
+            return;
+        }
+        pool.query(`CALL buchen($1::smallint, $2, current_timestamp::timestamp, $3::varchar,
+	row($4, $5, $6)::target_konto_split,
+	row($7, $8, $9)::target_konto_split,
+	row($10, $11, $12)::target_konto_split);
+	`, [body.source.id, body.sourceKontoHaben, body.source.description,
+        body.target1.id, body.target1.amount, body.target1.description,
+        body.target2.id, body.target2.amount, body.target2.description,
+        body.target3.id, body.target3.amount, body.target3.description], (err, pgRes) => {
+            if (err) {
+                res.statusCode = 400;
+                res.setHeader('Content-Type', 'application/json');
+                res.end();
+            } else {
+                console.log('Konto erfolgreich erstellt!');
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: true, data: pgRes.rows[0] }));
+            }
+            release();
+        });
+    });
+    });
+  }
 });
 
 server.listen(port, hostname, () => {
