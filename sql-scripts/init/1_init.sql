@@ -32,22 +32,6 @@ create table buchung_target(
 	primary key (buchung_id, target_konto) -- splitting: the amount from source can be split to several target kontos
 );
 
-create table test_result(
-	test_name 	varchar(50) primary key,
-	passed 		boolean
-);
-
-create table test_error(
-	test_name	varchar(50) references test_result(test_name),
-	error_message	varchar(250),
-	primary key (test_name, error_message)
-);
-
-create table test_performance_result(
-	test_name		varchar(50) primary key references test_result(test_name),
-	time_in_millis		bigint
-);
-
 create type target_konto_split AS (
     konto_id smallint,
     amount_in_cents integer,
