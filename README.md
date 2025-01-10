@@ -155,16 +155,16 @@ begin
 	    values (total, source_konto_id, source_konto_is_on_haben_side, source_description, time_of_transfer) returning id into buchung_id;
 	-- Saldo anpassen
 	insert into saldo(konto, point_in_time, haben_in_cents, soll_in_cents)
-	with latest as
-	(
-		select max(point_in_time) as point_in_time from saldo group by konto having konto = source_konto_id
-	)
-	-- small trick to avoid if-else construct: multiply source_konto_is_on_haben_side (as 0 or 1) to amount in order to implement a kind of toggle
-	select source_konto_id, time_of_transfer, 
-	    haben_in_cents + (source_konto_is_on_haben_side::integer * total), 
-	    soll_in_cents + ((not source_konto_is_on_haben_side)::integer * total)
-	from saldo join latest using(point_in_time)
-	where konto = source_konto_id;
+	    with latest as
+	    (
+		    select max(point_in_time) as point_in_time from saldo group by konto having konto = source_konto_id
+	    )
+	    -- small trick to avoid if-else construct: multiply source_konto_is_on_haben_side (as 0 or 1) to amount in order to implement a kind of toggle
+	    select source_konto_id, time_of_transfer, 
+	        haben_in_cents + (source_konto_is_on_haben_side::integer * total), 
+	        soll_in_cents + ((not source_konto_is_on_haben_side)::integer * total)
+	    from saldo join latest using(point_in_time)
+	    where konto = source_konto_id;
 
     insert into buchung_target(buchung_id, amount_in_cents, target_konto, description)   
 		select buchung_id, amount_in_cents, konto_id as target_konto, description 
@@ -173,7 +173,7 @@ begin
 				row(3, to_number('1000,00', '9999G99'), '')::target_konto_split
 			]::target_konto_split[]);
 
-		insert into saldo(konto, point_in_time, haben_in_cents, soll_in_cents)
+	insert into saldo(konto, point_in_time, haben_in_cents, soll_in_cents)
 		with latest as
 		(
 			select max(point_in_time) as point_in_time from saldo group by konto having konto = split_buchung.konto_id
