@@ -1,6 +1,6 @@
 # Homeaccounting
 Homeaccounting ist eine Webanwendung für das Verwalten von Ein- und Ausgaben im privaten Haushalt mithilfe von dem Prinzip des "Buchens" wie man es aus einer Ausbildung als Kauffrau/-mann für Büromanagement kennt. Das Projekt ist hauptsächlich als Lernprojekt gedacht, insbesondere hat es einen starken Fokus auf die Postgres Datenbank: Ich wollte in diesem Projekt verproben, welche Herausforderungen und Chancen sich ergeben, wenn man die Anwendungslogik mithilfe von Stored Procedures vom Backend Server in die Datenbank verlagert. Meine Ergebnisse und Erkenntnisse präsentiere ich weiter unten in dieser README. \
-**Wichtig**: Auch wenn die Anwendung verlockend erscheint und auf den ersten Blick die Hauptfeatures solide zu funktionieren scheinen, möchte ich zum jetzigen Zeitpunkt vom produktiven Gebrauch der Anwendung abraten. Die Anwendung wurde nicht auf Cypersecurity oder Robustheit geprüft. Desweiteren übernehme ich keine Haftung und biete keine Garantie. Falls Du das Projekt unterstützen und zu einem vollwertigen Produkt ausbauen möchtest, setze Dich gerne mit mir in Verbindung!
+**Wichtig**: Ich rate zum jetzigen Zeitpunkt vom produktiven Gebrauch der Anwendung ab. Die Anwendung wurde nicht auf Cypersecurity oder Robustheit geprüft. Desweiteren übernehme ich keine Haftung und biete keine Garantie. Falls Du das Projekt unterstützen und zu einem vollwertigen Produkt ausbauen möchtest, setze Dich gerne mit mir in Verbindung!
 ## Requirements
 - docker
 - docker compose
@@ -24,8 +24,8 @@ Starten mit:\
 - Die meiste Logik liegt in der Datenbank in Form von Stored Procedures.
 
 ## Verlagerung der Anwendungslogik vom Backend in die Datenbank
-Die Grundidee ist, mithilfe von Stored Procedures die Anwendungslogik als (PLPG)SQL in der Datenbank abzubilden. Beispiel:\
-In der Buchhaltung gibt es das Konzept des "Splittings". Wollen wir also z.B. eine Paypay Abrechnung mit mehreren verschiedenen Artikeln buchen, die auf verschiedene Konten gebucht werden sollen, können wir diese Rechnung als einzelne Buchung verarbeiten. Angenommen die Paypal Rechnung umfasste folgende Artikel:
+Die Grundidee ist, mithilfe von Stored Procedures die Anwendungslogik als (PLpg)SQL in der Datenbank abzubilden. Beispiel:\
+In der Buchhaltung gibt es das Konzept des "Splittings". Wollen wir also z.B. eine Paypal Abrechnung mit mehreren verschiedenen Artikeln buchen, können wir diese Rechnung als einzelne Buchung verarbeiten. Angenommen die Paypal Rechnung umfasste folgende Artikel:
 | Artikel                  | Preis  |
 | ------------------------ | ------ |
 | Kinderschuhe             | 30,00€ |
@@ -40,7 +40,6 @@ Dann könnte das Splitten der Rechnung wie folgt aussehen:\
 - Wir buchen 50,00€ auf Soll von Konto 'Freizeit'
 - Wir buchen 90,00€ auf Haben von Konto 'Bankkonto'
 
-Tipp: Falls das Prinzip von Splitting und Soll und Haben noch nicht klar ist, kannst du danach mit den Stichwörtern 'Buchhaltung' oder 'Kaufmann/-frau für Büromanagement' suchen.\
 Die Buchung bilden wir (vereinfacht) wie folgt in den Datenbanktabellen ab:\
 Tabelle Buchung
 | ID | Quellkonto | Quellkonto Soll oder Haben? |
@@ -66,37 +65,76 @@ Tabelle Saldo
 | Hund      | 10,00€ | 0      | 2025-01-10 10:30 |
 | Freizeit  | 50,00€ | 0      | 2025-01-10 10:30 |
 
-Diese Splitting können wir programmatisch auf zwei Arten erreichen.
+Dieses Splitting können wir programmatisch auf zwei Arten erreichen.
 ### Splitting im Backend
-Pseudocode:
+Mithile von Object Relational Mapping (ORM) - z.B. mit Hibernate - können wir den Vorgang des Buchens in etwa wie folgt erfassen (Achtung, von ChatGPT generiert):
 ```
-previousSaldos := postgresClient.execute('select * from saldo')
-previousSaldos.filter(konto in [Bankkonto, Kind, Hund, Freizeit])
-previousSaldosPerKonto := previousSaldos.array_agg(konto)
-define latestSaldos
-for kontoSaldos in previousSaldosPerKonto
-    latestSaldos.append(kontoSaldos.filter(max_timestamp))
-end for
-...
-sourceKontoAmount := sum(amountsOfTargets)
-if (sourceKontoIsOnHabenSide)
-    sourceKontoHaben = sourceKontoHaben + sourceKontoAmount
-else
-    sourceKontoSoll = sourceKontoSoll + sourceKontoAmount
-endif
-...
-postgresClient.beginTransaction()
-postgresClient.execute('insert into buchung values ($1)', newBuchungs)
-postgresClient.execute('insert into saldo values ($1)', newSaldos)
-postgresClient.execute('insert into buchung_target values ($1)', newBuchungTargets)
-postgresClient.commit()
+ @Transactional
+    public void buchen(Short sourceKontoId, Boolean sourceKontoIsOnHabenSide, Timestamp timeOfTransfer,
+                        String sourceDescription, List<TargetKontoSplit> targetKontoSplitArr) {
+        // Schritt 1: Berechne den Gesamtbetrag
+        int totalAmount = 0;
+        for (TargetKontoSplit split : targetKontoSplitArr) {
+            totalAmount += split.getAmountInCents();
+        }
+
+        // Schritt 2: Erstelle eine neue Buchung
+        Buchung buchung = new Buchung();
+        buchung.setAmountInCents(totalAmount);
+        buchung.setSourceKonto(getKontoById(sourceKontoId));
+        buchung.setSourceKontoIsOnHabenSide(sourceKontoIsOnHabenSide);
+        buchung.setDescription(sourceDescription);
+        buchung.setTimeOfTransfer(timeOfTransfer);
+
+        entityManager.persist(buchung);
+
+        // Schritt 3: Aktualisiere das Saldo für das Quellkonto
+        updateSaldo(sourceKontoId, totalAmount, sourceKontoIsOnHabenSide, timeOfTransfer);
+
+        // Schritt 4: Erstelle Buchung-Targets und aktualisiere Saldo für jedes Zielkonto
+        for (TargetKontoSplit split : targetKontoSplitArr) {
+            BuchungTarget buchungTarget = new BuchungTarget();
+            buchungTarget.setBuchung(buchung);
+            buchungTarget.setAmountInCents(split.getAmountInCents());
+            buchungTarget.setTargetKonto(getKontoById(split.getKontoId()));
+            buchungTarget.setDescription(split.getDescription());
+
+            entityManager.persist(buchungTarget);
+
+            // Saldo für das Zielkonto aktualisieren
+            updateSaldo(split.getKontoId(), split.getAmountInCents(), !sourceKontoIsOnHabenSide, timeOfTransfer);
+        }
+    }
+    
+    private void updateSaldo(Short kontoId, int amountInCents, boolean isHabenSide, Timestamp timeOfTransfer) {
+        // Finde das neueste Saldo für das Konto
+        Query query = entityManager.createQuery("SELECT s FROM Saldo s WHERE s.konto.id = :kontoId ORDER BY s.pointInTime DESC");
+        query.setParameter("kontoId", kontoId);
+        query.setMaxResults(1);
+
+        Saldo latestSaldo = (Saldo) query.getSingleResult();
+
+        // Berechne den neuen Saldo
+        Saldo newSaldo = new Saldo();
+        newSaldo.setKonto(latestSaldo.getKonto());
+        newSaldo.setPointInTime(timeOfTransfer);
+        if (isHabenSide) {
+            newSaldo.setHabenInCents(latestSaldo.getHabenInCents() + amountInCents);
+            newSaldo.setSollInCents(latestSaldo.getSollInCents());
+        } else {
+            newSaldo.setSollInCents(latestSaldo.getSollInCents() + amountInCents);
+            newSaldo.setHabenInCents(latestSaldo.getHabenInCents());
+        }
+
+        entityManager.persist(newSaldo);
+    }
 ```
-Der Pseudocode ist ganz rudimentär und unvollständig und soll nur die grobe Idee rüberbringen:
+Dieser Ansatz zeigt:
 - Einfache Queries zum Abfragen der Daten
 - Berechnung der neuen Werte und Erstellen der neuen Datensätze
-- Einfache Queries zum Aktualisieren der Datenbank
-Mithilfe von Object-Relational-Mapping (ORM) könnte man automatisch selektivere Datenbankzugriffe durch Modellierung der Query erhalten. Doch dann bildet man die Anwendungslogik im proprietären Modell des ORM Frameworks ab und dieses Modell könnte weniger portabel, bekannt und lesbar sein als SQL.\\
-Zum Testen würde man den Code in testbare Funktionen aufteilen und mithilfe eines Test-Frameworks ausführen. Alternativ kann man gegen die Datenbank testen und weitere Queries absetzen, um den Datenstand vorher und hinterher abzugleichen.
+- Generierte Queries zum Update der Datenbank
+
+Zum Unit-Testen könnte man den Code in testbarere Funktionen aufteilen und mithilfe eines Test-Frameworks ausführen. Alternativ kann man gegen die Datenbank testen und weitere Queries absetzen, um den Datenstand vorher und hinterher abzugleichen.
 ### Splitting in der Datenbank
 Ausschnitt aus init.sql:
 ```
@@ -145,14 +183,14 @@ begin
 end;
 $$ language plpgsql;
 ```
-Bemerkenswert ist, dass SQL mehrere Features bietet, um die komplexe Berechnungslogik ganz ohne Loops und if-else Konstrukte abzubilden:
+Bemerkenswert ist, dass SQL mehrere Features bietet, um die komplexe Berechnungslogik ohne Loops und if-else Konstrukte abzubilden:
 - Common Table Expressions (CTEs)
 - Joins
 - Aggregationen
 - Umgang mit arrays (unnest)
 - Window Functions (brauchten wir hier nicht)
 
-Auch Tests können als Stored Procedures abgebildet werden. Die Tests bestehen dann aus einem einfachen Ausführen des SQL Skripts und da die Testausführung in der Datenbank stattfindet, können wir die gesamte Unit-Test-Strecke an einer einzelnen Stelle abbilden - in der Datenbank:
+Auch Tests können als Stored Procedures abgebildet werden. Die Tests bestehen dann aus einem einfachen Ausführen des SQL Skripts und somit  können wir die gesamte Unit-Test-Strecke an einer einzelnen Stelle abbilden - in der Datenbank:
 1. Testvorbedingungen schaffen / Testdaten anlegen
 2. Testobjekt (SQL Code) ausführen
 3. Vergleich von Ist und Soll
@@ -341,17 +379,17 @@ pool.query("CALL create_konto($1, $2);", [body, null], (err, pgRes) => {
 ```
 ### Ergebnisse
 In diesem einfachen Projekt habe ich eine Methodik, die Anwendungslogik vom Backend in die Datenbank zu verlagern, verprobt. Dabei konnte ich die Haupt-Use-Cases und einige Unit-Tests erfolgreich umsetzen und somit die Umsetzbarkeit der Methodik bestätigen. Hier sind einige interessante Punkte, die ich währenddessen beobachtet habe:
-- Beim Debugging der Anwendungslogik (SQL) mithilfe eines Datenbankclients (dbeaver) konnte ich regelmäßig (Sub-)Queries unkompliziert absetzen, um sie inkrementell weiter auszubauen oder zu überprüfen.
-- Jedes Mal, wenn das Backend eine Abfrage an die Datenbank schickt, müssen Daten über eine Socket hin und zurück transferiert werden. Auch wenn die Datenmenge gering ist, fällt jedes Mal der Kommunikations-Overhead der Socket an. Liegt die Anwendungslogik im Backend, könnten mehrere Abfragen notwendig sein. Bei dieser Methodik brauchte aber jeweils nur eine Abfrage abgesetzt werden: den Procedure Call.
-- Unit-Tests auf der Datenbank können Vorbereitung, Ausführung und Nachbereitung einfach miteinander verbinden.
+- **Debugging:** Beim Debugging der Anwendungslogik (SQL) mithilfe eines Datenbankclients (dbeaver) konnte ich regelmäßig (Sub-)Queries unkompliziert absetzen, um sie inkrementell weiter auszubauen oder zu überprüfen.
+- **Netzwerk:** Jedes Mal, wenn das Backend eine Abfrage an die Datenbank schickt, müssen Daten über eine Socket hin und zurück transferiert werden. Auch wenn die Datenmenge gering ist, fällt jedes Mal der Kommunikations-Overhead der Socket an. Liegt die Anwendungslogik im Backend, könnten mehrere Abfragen notwendig sein. Bei dieser Methodik brauchte aber jeweils nur eine Abfrage abgesetzt werden: den Procedure Call.
+- **Unit-Tests:** Unit-Tests auf der Datenbank können Vorbereitung, Ausführung und Nachbereitung einfach miteinander verbinden.
 
 
 ## Ausblick
-Ich habe die Durchführbarkeit einer [Verlagerung der Anwendungslogik vom Backend in die Datenbank](#Verlagerung-der-Anwendungslogik-vom-Backend-in-die-Datenbank) überprüft und dabei einige Beobachtungen bezüglich der Auswirkungen auf den Entwicklungsprozess und Softwarequalität aufgestellt. Als nächstes möchte ich die Lösung weiter ausbauen und dabei mein Grundlagenwissen in Datenbanken vertiefen:
+Bisher habe ich den Umgang mit Stored Procedures und fortgeschrittenen SQL Queries gelernt. Als nächstes möchte mein Grundlagenwissen in zwei weiteren Bereichen vertiefen:
 - Concurrency Control: welche Anomalien können beim Default Isolation Level bei unserem Anwendungsfall auftreten? Wie können wir die Anomalien in der Datenbank verhindern?
 - Performance: ich würde gerne ein fachlich sinnvolles Mengengerüst aufstellen, passende Testdaten generieren und damit Lasttests durchführen. Ist die Latenz beim Durchführen einer Buchung spürbar (>30ms)? Wenn ja, wie können wir die Performance optimieren ohne die Latenz anderer Anwendungsfälle über 30ms zu heben?
 
-Andere Aspekte, in denen ich gerne Unterstützung annehme: 
+Andere Aspekte, in denen ich gerne Unterstützung annehme:
 - Im Frontend ist zur eine weitere Funktionalität angedeutet: zur Analyse soll der zeitliche Verlauf des Saldos des gewählten Kontos in einem Diagramm dargestellt werden.
 - Die Sicherheit und Robustheit der Anwendung muss noch gewährleistet werden, bevor sie produktiv genutzt werden kann.
 - Das Frontend könnte etwas Liebe vertragen (angefangen bei einem CSS-File)
