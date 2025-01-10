@@ -139,11 +139,11 @@ Zum Unit-Testen könnte man den Code in testbarere Funktionen aufteilen und mith
 Ausschnitt aus init.sql:
 ```
 create or replace procedure buchen(
-    source_konto_id smallint, 
-    source_konto_is_on_haben_side boolean,
-    time_of_transfer timestamp,
-    source_description varchar(100),
-    variadic target_konto_split_arr target_konto_split[]
+    source_konto_id 			smallint, 
+    source_konto_is_on_haben_side 	boolean,
+    time_of_transfer 			timestamp,
+    source_description 			varchar(100),
+    variadic target_konto_split_arr 	target_konto_split[]
     ) as $$
 declare
     buchung_id integer;
@@ -154,36 +154,36 @@ begin
     insert into buchung(amount_in_cents, source_konto, source_konto_is_on_haben_side, description, time_of_transfer) 
 	    values (total, source_konto_id, source_konto_is_on_haben_side, source_description, time_of_transfer) returning id into buchung_id;
 	-- Saldo anpassen
-	insert into saldo(konto, point_in_time, haben_in_cents, soll_in_cents)
-	    with latest as
-	    (
-		    select max(point_in_time) as point_in_time from saldo group by konto having konto = source_konto_id
-	    )
-	    -- small trick to avoid if-else construct: multiply source_konto_is_on_haben_side (as 0 or 1) to amount in order to implement a kind of toggle
-	    select source_konto_id, time_of_transfer, 
-	        haben_in_cents + (source_konto_is_on_haben_side::integer * total), 
-	        soll_in_cents + ((not source_konto_is_on_haben_side)::integer * total)
-	    from saldo join latest using(point_in_time)
-	    where konto = source_konto_id;
+    insert into saldo(konto, point_in_time, haben_in_cents, soll_in_cents)
+        with latest as
+	(
+	    select max(point_in_time) as point_in_time from saldo group by konto having konto = source_konto_id
+	)
+	-- small trick to avoid if-else construct: multiply source_konto_is_on_haben_side (as 0 or 1) to amount in order to implement a kind of toggle
+	select source_konto_id, time_of_transfer, 
+	    haben_in_cents + (source_konto_is_on_haben_side::integer * total), 
+	    soll_in_cents + ((not source_konto_is_on_haben_side)::integer * total)
+	from saldo join latest using(point_in_time)
+	where konto = source_konto_id;
 
     insert into buchung_target(buchung_id, amount_in_cents, target_konto, description)   
-		select buchung_id, amount_in_cents, konto_id as target_konto, description 
-		from unnest(array [
-				row(2, to_number('2000,00', '9999G99'), 'für vorzeitige Rückzahlung')::target_konto_split,
-				row(3, to_number('1000,00', '9999G99'), '')::target_konto_split
-			]::target_konto_split[]);
+	select buchung_id, amount_in_cents, konto_id as target_konto, description 
+	from unnest(array [
+			row(2, to_number('2000,00', '9999G99'), 'für vorzeitige Rückzahlung')::target_konto_split,
+			row(3, to_number('1000,00', '9999G99'), '')::target_konto_split
+		]::target_konto_split[]);
 
-	insert into saldo(konto, point_in_time, haben_in_cents, soll_in_cents)
-		with latest as
-		(
-			select max(point_in_time) as point_in_time from saldo group by konto having konto = split_buchung.konto_id
-		)
-		-- small trick to avoid if-else construct: multiply source_konto_is_on_haben_side (as 0 or 1) to amount in order to implement a kind of toggle
-		select split_buchung.konto_id, time_of_transfer, 
-		    haben_in_cents + (source_konto_is_on_haben_side::integer * split_buchung.amount_in_cents), 
-		    soll_in_cents + ((not source_konto_is_on_haben_side)::integer * split_buchung.amount_in_cents)
-		from saldo join latest using(point_in_time)
-		where konto = split_buchung.konto_id;
+    insert into saldo(konto, point_in_time, haben_in_cents, soll_in_cents)
+	with latest as
+	(
+		select max(point_in_time) as point_in_time from saldo group by konto having konto = split_buchung.konto_id
+	)
+	-- small trick to avoid if-else construct: multiply source_konto_is_on_haben_side (as 0 or 1) to amount in order to implement a kind of toggle
+	select split_buchung.konto_id, time_of_transfer, 
+		haben_in_cents + (source_konto_is_on_haben_side::integer * split_buchung.amount_in_cents), 
+		soll_in_cents + ((not source_konto_is_on_haben_side)::integer * split_buchung.amount_in_cents)
+	from saldo join latest using(point_in_time)
+    where konto = split_buchung.konto_id;
 end;
 $$ language plpgsql;
 ```
