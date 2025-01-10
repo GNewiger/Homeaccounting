@@ -1,6 +1,17 @@
 # Homeaccounting
 Homeaccounting ist eine Webanwendung für das Verwalten von Ein- und Ausgaben im privaten Haushalt mithilfe von dem Prinzip des "Buchens" wie man es aus einer Ausbildung als Kauffrau/-mann für Büromanagement kennt. Das Projekt ist hauptsächlich als Lernprojekt gedacht, insbesondere hat es einen starken Fokus auf die Postgres Datenbank: Ich wollte in diesem Projekt verproben, welche Herausforderungen und Chancen sich ergeben, wenn man die Anwendungslogik mithilfe von Stored Procedures vom Backend Server in die Datenbank verlagert. Meine Ergebnisse und Erkenntnisse präsentiere ich weiter unten in dieser README. \
 **Wichtig**: Ich rate zum jetzigen Zeitpunkt vom produktiven Gebrauch der Anwendung ab. Die Anwendung wurde nicht auf Cypersecurity oder Robustheit geprüft. Desweiteren übernehme ich keine Haftung und biete keine Garantie. Falls Du das Projekt unterstützen und zu einem vollwertigen Produkt ausbauen möchtest, setze Dich gerne mit mir in Verbindung!
+
+# Table of Contents
+1. [Requirements](#requirements)
+2. [Build & Start](#build--start)
+3. [Projektstruktur](#projektstruktur)
+4. [Verlagerung der Anwendungslogik vom Backend in die Datenbank](#verlagerung-der-anwendungslogik-vom-backend-in-die-datenbank)
+   	1. [Splitting im Backend](#splitting-im-backend)
+   	2. [Splitting in der Datenbank](#splitting-in-der-datenbank)
+   	3. [Ergebnisse](#ergebnisse)
+5. [Ausblick](#ausblick)
+
 ## Requirements
 - docker
 - docker compose
