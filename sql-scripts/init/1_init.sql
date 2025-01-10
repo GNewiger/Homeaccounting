@@ -60,7 +60,9 @@ begin
 		select max(point_in_time) as point_in_time from saldo group by konto having konto = source_konto_id
 	)
 	-- small trick to avoid if-else construct: multiply source_konto_is_on_haben_side (as 0 or 1) to amount in order to implement a kind of toggle
-	select source_konto_id, time_of_transfer, haben_in_cents + (source_konto_is_on_haben_side::integer * total), soll_in_cents + ((not source_konto_is_on_haben_side)::integer * total)
+	select source_konto_id, time_of_transfer, 
+		haben_in_cents + (source_konto_is_on_haben_side::integer * total), 
+		soll_in_cents + ((not source_konto_is_on_haben_side)::integer * total)
 	from saldo join latest using(point_in_time)
 	where konto = source_konto_id;
 
@@ -77,7 +79,9 @@ begin
 			select max(point_in_time) as point_in_time from saldo group by konto having konto = split_buchung.konto_id
 		)
 		-- small trick to avoid if-else construct: multiply source_konto_is_on_haben_side (as 0 or 1) to amount in order to implement a kind of toggle
-		select split_buchung.konto_id, time_of_transfer, haben_in_cents + (source_konto_is_on_haben_side::integer * split_buchung.amount_in_cents), soll_in_cents + ((not source_konto_is_on_haben_side)::integer * split_buchung.amount_in_cents)
+		select split_buchung.konto_id, time_of_transfer, 
+			haben_in_cents + (source_konto_is_on_haben_side::integer * split_buchung.amount_in_cents), 
+			soll_in_cents + ((not source_konto_is_on_haben_side)::integer * split_buchung.amount_in_cents)
 		from saldo join latest using(point_in_time)
 		where konto = split_buchung.konto_id;
 end;

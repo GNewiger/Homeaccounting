@@ -160,7 +160,9 @@ begin
 		select max(point_in_time) as point_in_time from saldo group by konto having konto = source_konto_id
 	)
 	-- small trick to avoid if-else construct: multiply source_konto_is_on_haben_side (as 0 or 1) to amount in order to implement a kind of toggle
-	select source_konto_id, time_of_transfer, haben_in_cents + (source_konto_is_on_haben_side::integer * total), soll_in_cents + ((not source_konto_is_on_haben_side)::integer * total)
+	select source_konto_id, time_of_transfer, 
+	    haben_in_cents + (source_konto_is_on_haben_side::integer * total), 
+	    soll_in_cents + ((not source_konto_is_on_haben_side)::integer * total)
 	from saldo join latest using(point_in_time)
 	where konto = source_konto_id;
 
@@ -177,7 +179,9 @@ begin
 			select max(point_in_time) as point_in_time from saldo group by konto having konto = split_buchung.konto_id
 		)
 		-- small trick to avoid if-else construct: multiply source_konto_is_on_haben_side (as 0 or 1) to amount in order to implement a kind of toggle
-		select split_buchung.konto_id, time_of_transfer, haben_in_cents + (source_konto_is_on_haben_side::integer * split_buchung.amount_in_cents), soll_in_cents + ((not source_konto_is_on_haben_side)::integer * split_buchung.amount_in_cents)
+		select split_buchung.konto_id, time_of_transfer, 
+		    haben_in_cents + (source_konto_is_on_haben_side::integer * split_buchung.amount_in_cents), 
+		    soll_in_cents + ((not source_konto_is_on_haben_side)::integer * split_buchung.amount_in_cents)
 		from saldo join latest using(point_in_time)
 		where konto = split_buchung.konto_id;
 end;
@@ -219,8 +223,8 @@ create table if not exists test_result(
 );
 
 create table if not exists test_error(
-	test_suite 	varchar(50),
-	test_name	varchar(50),
+	test_suite  	varchar(50),
+	test_name   	varchar(50),
 	error_message	varchar(250),
 	primary key (test_suite, test_name, error_message),
 	FOREIGN KEY (test_suite, test_name) REFERENCES test_result(test_suite, test_name)
@@ -273,13 +277,19 @@ as $$
 begin
     ...
     with only_one_buchung as (
-        select 'only_one_buchung' as name, count(*) != 1 as is_error, 'Expected count of buchung to be 1, actual: ' || count(*) as error_message from buchung
+        select 'only_one_buchung' as name, 
+            count(*) != 1 as is_error, 
+            'Expected count of buchung to be 1, actual: ' || count(*) as error_message from buchung
     ),
     source_has_right_amount as (
-        select 'source_has_right_amount' as name, amount_in_cents != to_number('3000,00', '9999G99') as is_error, 'Expected amount to be 3000,00€, actual: ' || to_char(amount_in_cents, 'FM99999999G99L') as error_message from buchung
+        select 'source_has_right_amount' as name, 
+            amount_in_cents != to_number('3000,00', '9999G99') as is_error, 
+            'Expected amount to be 3000,00€, actual: ' || to_char(amount_in_cents, 'FM99999999G99L') as error_message from buchung
     ),
     source_is_haben as (
-        select 'source_is_haben' as name, not source_konto_is_on_haben_side as is_error, 'Expected source buchung to be haben, actual: soll' as error_message from buchung
+        select 'source_is_haben' as name, 
+            not source_konto_is_on_haben_side as is_error, 
+            'Expected source buchung to be haben, actual: soll' as error_message from buchung
     ),
     ...
 end$$;
@@ -290,10 +300,14 @@ as $$
 begin
     ...
     with target_has_right_amount as (
-        select 'target_has_right_amount' as name, amount_in_cents != to_number('2000,00', '9999G99') as is_error, 'Expected amount to be 2000,00€, actual: ' || to_char(amount_in_cents, 'FM99999999G99L') as error_message from buchung
+        select 'target_has_right_amount' as name, 
+            amount_in_cents != to_number('2000,00', '9999G99') as is_error, 
+            'Expected amount to be 2000,00€, actual: ' || to_char(amount_in_cents, 'FM99999999G99L') as error_message from buchung
     ),
     source_is_soll as (
-        select 'source_is_soll' as name, source_konto_is_on_haben_side as is_error, 'Expected source buchung to be soll, actual: haben' as error_message from buchung
+        select 'source_is_soll' as name, 
+            source_konto_is_on_haben_side as is_error, 
+            'Expected source buchung to be soll, actual: haben' as error_message from buchung
     ),
     ...
 end$$;

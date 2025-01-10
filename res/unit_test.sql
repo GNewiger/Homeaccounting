@@ -10,13 +10,19 @@ begin
 	row(3, to_number('1000,00', '9999G99'), '')::target_konto_split);
     
     with only_one_buchung as (
-        select 'only_one_buchung' as name, count(*) != 1 as is_error, 'Expected count of buchung to be 1, actual: ' || count(*) as error_message from buchung
+        select 'only_one_buchung' as name, 
+        	count(*) != 1 as is_error, 
+        	'Expected count of buchung to be 1, actual: ' || count(*) as error_message from buchung
     ),
     source_has_right_amount as (
-        select 'source_has_right_amount' as name, amount_in_cents != to_number('3000,00', '9999G99') as is_error, 'Expected amount to be 3000,00€, actual: ' || to_char(amount_in_cents, 'FM99999999G99L') as error_message from buchung
+        select 'source_has_right_amount' as name, 
+        	amount_in_cents != to_number('3000,00', '9999G99') as is_error, 
+        	'Expected amount to be 3000,00€, actual: ' || to_char(amount_in_cents, 'FM99999999G99L') as error_message from buchung
     ),
     source_is_haben as (
-        select 'source_is_haben' as name, not source_konto_is_on_haben_side as is_error, 'Expected source buchung to be haben, actual: soll' as error_message from buchung
+        select 'source_is_haben' as name, 
+        	not source_konto_is_on_haben_side as is_error, 
+        	'Expected source buchung to be haben, actual: soll' as error_message from buchung
     ),
     result as (
         insert into test_result(test_suite, test_name, passed)
@@ -45,10 +51,14 @@ begin
 	row(2, to_number('2000,00', '9999G99'), 'für vorzeitige Rückzahlung')::target_konto_split);
     
     with target_has_right_amount as (
-        select 'target_has_right_amount' as name, amount_in_cents != to_number('2000,00', '9999G99') as is_error, 'Expected amount to be 2000,00€, actual: ' || to_char(amount_in_cents, 'FM99999999G99L') as error_message from buchung
+        select 'target_has_right_amount' as name, 
+        	amount_in_cents != to_number('2000,00', '9999G99') as is_error, 
+        	'Expected amount to be 2000,00€, actual: ' || to_char(amount_in_cents, 'FM99999999G99L') as error_message from buchung
     ),
     source_is_soll as (
-        select 'source_is_soll' as name, source_konto_is_on_haben_side as is_error, 'Expected source buchung to be soll, actual: haben' as error_message from buchung
+        select 'source_is_soll' as name, 
+        	source_konto_is_on_haben_side as is_error, 
+        	'Expected source buchung to be soll, actual: haben' as error_message from buchung
     ),
     result as (
         insert into test_result(test_suite, test_name, passed)
