@@ -40,6 +40,8 @@ function selectKonto(id) {
     document.getElementById("selectedKontoName").innerText = selectedKontoName.innerText;
     document.getElementById("selectedKontoName").innerText = selectedKontoName.innerText;
     document.getElementById("kontoSection").removeAttribute("hidden");
+    document.getElementById("buchungSection").removeAttribute("hidden");
+    document.getElementById("selectedKontoName").removeAttribute("hidden");
 }
 
 function addKontoClicked() {

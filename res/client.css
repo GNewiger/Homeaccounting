@@ -1,0 +1,23 @@
+@media only screen and (min-width: 700px) {
+    main {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    #kontoListeSection {
+        grid-column: 1 / 3;
+        grid-row: 1;
+    }
+    #selectedKontoName {
+        grid-column: 1 / 3;
+        grid-row: 2;
+    }
+    #buchungSection {
+        grid-column: 1;
+        grid-row: 3;
+    }
+    #kontoSection {
+        grid-column: 2;
+        grid-row: 3;
+    }
+}

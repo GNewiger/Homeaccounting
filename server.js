@@ -15,7 +15,8 @@ const pool = new Pool({
 
 const clientHtml = fs.readFileSync('./res/client.html');
 const clientJs = fs.readFileSync('./res/client.js');
-const unitTestSql = fs.readFileSync('./res/unit_test.sql');
+const clientCss = fs.readFileSync('./res/client.css');
+const unitTestSql = fs.readFileSync('./sql-scripts/unit_test.sql');
 
 const server = createServer((req, res) => {
   if (req.url === '/'){
@@ -28,6 +29,12 @@ const server = createServer((req, res) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/javascript');
     res.end(clientJs.toString());
+    return;
+  }
+  if (req.url === '/client.css'){
+    res.statusCode = 200;
+    res.setHeader('Content-Type', 'text/css');
+    res.end(clientCss.toString());
     return;
   }
   if (req.url === '/create-konto'){

@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Homeaccounting</title>
+    <link rel="stylesheet" href="client.css">
   </head>
   <body>
     <main>
-        <section>
+        <section id="kontoListeSection">
           <h1>Konten</h1>
           <table id="kontoListe">
             <tr>
@@ -23,11 +24,11 @@
             </button>
           </form>
         </section>
-        <section>
+        <h1 hidden id="selectedKontoName"></h1>
+        <section hidden id="buchungSection">
           <h1>Buchungen</h1>
         </section>
         <section hidden id="kontoSection">
-          <h1 id="selectedKontoName"></h1>
           <label id="selectedKontoCurrentSoll"></label>
           <label id="selectedKontoCurrentHaben"></label>
           <h2>Buchen</h2>
@@ -61,13 +62,8 @@
                 Buchen
             </button>
           </form>
-          <h2>Analytics</h2>
-          <label for="kontoAnalyticsMonth">Monat:</label>
-          <input id="kontoAnalyticsMonth" type="month"/><br>
-          <canvas id="selectedKontoSollHabenByMonth" style="width:100%;max-width:700px"></canvas> 
         </section>
     </main>
     <script src="client.js"></script>
   </body>
 </html>
-
